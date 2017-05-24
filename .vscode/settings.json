@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "buildfile":"javascript",
+        "*.build":"javascript",
+        ".buildgraph":"json",
+        "*.d":"makefile"
+    }
+}

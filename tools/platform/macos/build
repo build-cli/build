@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+TOOLSDIR=`dirname $0`
+ROOTDIR=`cd $TOOLSDIR/../../.. > /dev/null && pwd`
+BUILD="$ROOTDIR/source/build.js"
+node --use_strict --harmony_trailing_commas "$BUILD" "$@"

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+TOOLSDIR="$(cd "$(dirname "$0")" && pwd)"
+$TOOLSDIR/platform/macos/shell
+exit 0

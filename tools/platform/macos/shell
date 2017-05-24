@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+TOOLSDIR=`dirname $0`
+TOOLSPATH=${TOOLSDIR}
+
+# if TOOLSDIR is not in the PATH, start a subshell with TOOLSDIR in the PATH
+if [[ ":${PATH}:" != *":${TOOLSPATH}:"* ]]; then
+    echo tools added to PATH
+    ${SHELL} --init-file <(echo ". ~/.bashrc; PATH=${TOOLSPATH}:${PATH}")
+else
+    echo tools found in PATH
+fi
