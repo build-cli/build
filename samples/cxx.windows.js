@@ -36,9 +36,10 @@ function parseDependencies(stdout,systemIncludeDirs) {
 const CXXFLAGS = [
     '/nologo',
     '/showIncludes',
-    '/EHsc',   // standard C++ exception handling
-    '/WX',     // warnings as errors
-    '/wd4068', // disable warning: unknown pragma
+    '/EHsc',       // standard C++ exception handling
+    '/FIiso646.h', // standard C++ keywords, 'and', 'or', etc.
+    '/WX',         // warnings as errors
+    '/wd4068',     // disable warning: unknown pragma
 ]
 
 function cxx(config,sources) {
@@ -48,6 +49,9 @@ function cxx(config,sources) {
     const iflags   = '/I'+include.map(quote).join(' /I')
     const compile  = `${quote(cxx)} ${cxxflags} ${iflags}`
     const productions = {}
+    function dependencies(stdout,stderr) {
+        return parseDependencies(stdout,include)
+    }
     for (let sourcePath in sources) {
         const srcfile = sourcePath
         const objpath = join(config.cachedir,'obj',srcfile)
@@ -56,9 +60,7 @@ function cxx(config,sources) {
             name:`compile ${sourcePath}`,
             command:`${compile} /Fo${quote(objfile)} /c ${quote(srcfile)}`,
             sources:{ [sourcePath]:sources[sourcePath] },
-            dependencies(stdout,stderr) {
-                return parseDependencies(stdout,include)
-            }
+            dependencies,
         }
     }
     return productions
