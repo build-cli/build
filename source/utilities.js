@@ -276,24 +276,14 @@ function execSync(command) {
     return child_process.execSync(command,ExecOptions).trim()
 }
 
-// shell(command,[cache,][callback])
-function shell(command,/*optional*/...args/*[cache,][callback]*/) {
-    let cache = args[0]
-    let callback = args[1]
-    if (isFunction(cache) && isUndefined(callback)) {
-        callback = cache
-        cache = undefined
-    }
-    if (cache) {
-        if (command in cache) {
-            return cache[command]
-        }
-        const output = execSync(command)
-        cache[command] = output
-        return output
+// shell(command,[env,][callback])
+function shell(command,/*optional*/env,/*optional*/callback) {
+    if (isFunction(env) && isUndefined(callback)) {
+        callback = env
+        env = undefined
     }
     if (callback) {
-        return child_process.exec(command,(err,stdout,stderr)=>{
+        return child_process.exec(command,{env},(err,stdout,stderr)=>{
             if (isString(stdout)) { stdout = stdout.trim() }
             if (isString(stderr)) { stderr = stderr.trim() }
             if (err) {
@@ -303,7 +293,7 @@ function shell(command,/*optional*/...args/*[cache,][callback]*/) {
             callback(err,stdout,stderr)
         })
     }
-    return execSync(command)
+    return execSync(command,{env})
 }
 
 // -----------------------------------------------------------------------------
@@ -363,7 +353,7 @@ function Obj_toString() {
         }
         return value
     }
-    return toJSON(this,replacer,4).replace(/"(\w+)"/g,(match,p1)=>p1)
+    return toJSON(this,replacer,4).replace(/"([^\s\\:]+)":/g,(match,p1)=>p1+':')
 }
 
 Object.defineProperty(Array.prototype,'toString',{get(){return Obj_toString}})

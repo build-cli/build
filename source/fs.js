@@ -32,7 +32,11 @@ fs.mkdirpSync = function mkdirpSync(dir) {
     if (parent != dir) {
         mkdirpSync(parent)
     }
-    fs.mkdirSync(dir)
+    try {
+        fs.mkdirSync(dir)
+    } catch (e) {
+        print(e)
+    }
     return true
 }
 

@@ -132,7 +132,7 @@ function showConfigurationsAndExit(status = 1) {
             for (let configName in configs) {
                 const aliasedName = aliases[configName]
                 if (aliasedName) {
-                    log(`    ${configName} ➤︎︎︎ ${aliasedName}`)
+                    log(`    ${configName}  \u2192  ${aliasedName}`)
                 } else {
                     log(`    ${configName}`)
                 }
@@ -238,6 +238,7 @@ function startBuild() {
     if (watch) {
         process.stdout.write('\x1Bc');
     }
+
     stopWatching()
     forEachAsync(builders,{
         startEach(builder,onEachComplete) {

@@ -1,4 +1,5 @@
-@echo off;setlocal EnableDelayedExpansion
+@echo off
+setlocal EnableDelayedExpansion
 set "TOOLSDIR=%~dp0"
 set "TOOLSPATH=%TOOLSDIR%"
 

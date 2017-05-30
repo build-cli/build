@@ -12,6 +12,7 @@ const {
     pushd,
 } = utilities
 
+const exists   = fs.existsSync
 const realpath = fs.realpathSync
 
 // -----------------------------------------------------------------------------
@@ -40,6 +41,10 @@ function includefile(filename) {
 
 function include(...patterns) {
     for (let pattern of patterns) {
+        if (exists(pattern)) {
+            includefile(pattern)
+            continue
+        }
         let filenames = glob.sync(pattern,globopts)
         for (let filename of filenames) {
             includefile(filename)

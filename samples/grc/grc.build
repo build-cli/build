@@ -4,9 +4,9 @@ targets.grc={
         ['grc.debug']:`grc.cmd.${platform}.${architecture}.debug`,
         ['grc.release']:`grc.cmd.${platform}.${architecture}.release`,
     },
-    config:{
-        libdirs:[],
-    },
+    // config:{
+    //     libdirs:[],
+    // },
     products:{
         cmd:(config)=>ld('grc',config,
             cxx(config,cxx.sources()),

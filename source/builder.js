@@ -88,9 +88,11 @@ class Builder {
 
         let taskCount = 0
 
-        function createTask(name,output,command,dependencies) {
+        function createTask(name,output,production) {
             taskCount += 1
             name||(name = command)
+            const command      = production.command
+            const dependencies = production.dependencies
             return {name,output,command,dependencies}
         }
 
@@ -104,12 +106,9 @@ class Builder {
                     // const batch = batches[depth]||(batches[depth]=[])
                     const batch = batches[depth]||(batches[depth]={})
                     parseProductions(path,production.sources,depth+1)
-                    const name = production.name
-                    const command = production.command
-                    const dependencies = production.dependencies
-                    // batch.push(createTask(name,path,command,dependencies))
+                    const {name,command} = production
                     if (batch[command] === undefined) {
-                        batch[command] = createTask(name,path,command,dependencies)
+                        batch[command] = createTask(name,path,production)
                     }
                     const buildDir = dirname(path)
                     if (!isdir(buildDir)) {
@@ -257,15 +256,16 @@ class Builder {
             const command = task.command
             shell(command,(err,stdout,stderr)=>{
                 if (err) {
-                    errors.push(stdout+stderr)
+                    errors.push(`${command}\n\n${stdout}${stderr}`)
                     return onComplete(err)
                 }
                 if (errors.length) {
                     return onComplete(err)
                 }
-                const dependencies = task.dependencies
-                if (isFunction(dependencies)) {
-                    for (let dependency of dependencies(stdout,stderr)) {
+                const parseDependencies = task.dependencies
+                if (isFunction(parseDependencies)) {
+                    const dependencies = parseDependencies(stdout,stderr)
+                    for (let dependency of dependencies) {
                         addSource(dependency,task.output)
                     }
                 }
