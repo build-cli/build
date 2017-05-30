@@ -204,7 +204,8 @@ function stopWatching() {
 
 function onSourceChanged(event,filename) {
     // print(event,' ',filename)
-    startBuild()
+    stopWatching()
+    setTimeout(startBuild,250)
 }
 
 // -----------------------------------------------------------------------------
@@ -239,7 +240,6 @@ function startBuild() {
         process.stdout.write('\x1Bc');
     }
 
-    stopWatching()
     forEachAsync(builders,{
         startEach(builder,onEachComplete) {
             print(`${builder.name}`)
