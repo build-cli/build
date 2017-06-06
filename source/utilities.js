@@ -298,6 +298,31 @@ function shell(command,/*optional*/env,/*optional*/callback) {
 
 // -----------------------------------------------------------------------------
 
+function caller(/*optional*/ignore) {
+    const Error_prepareStackTrace = Error.prepareStackTrace
+    try {
+        Error.prepareStackTrace = (_,stack)=>stack
+        const stack = new Error().stack
+        stack.shift() // ignore function caller() itself
+        stack.shift() // ignore caller()'s caller
+        if (isNumber(ignore)) {
+            while (ignore --> 0) {
+                stack.shift()
+            }
+        }
+        let stackframe, filename
+        do {
+            stackframe = stack.shift()
+            filename = stackframe && stackframe.getFileName()
+        } while (stack.length && filename === 'module.js')
+        return filename
+    } finally {
+        Error.prepareStackTrace = Error_prepareStackTrace
+    }
+}
+
+// -----------------------------------------------------------------------------
+
 function stack(/*optional*/ignore) {
     const Error_prepareStackTrace = Error.prepareStackTrace
     try {
@@ -317,6 +342,40 @@ function stack(/*optional*/ignore) {
 
 // -----------------------------------------------------------------------------
 
+function removeCycles(value,visited) {
+    if (visited.has(value)) {
+        return undefined
+    }
+    visited.add(value)
+    if (isArray(value)) {
+        const array = []
+        for (let element of value) {
+            let decycled = removeCycles(element,visited)
+            if (decycled) {
+                array.push(decycled)
+            } else {
+                // array.push('<cycle>')
+            }
+        }
+        return array
+    }
+    if (isObject(value)) {
+        const object = {}
+        for (let key in value) {
+            let decycled = removeCycles(value[key],visited)
+            if (decycled) {
+                object[key] = decycled
+            } else {
+                // object[key] = '<cycle>'
+            }
+        }
+        return object
+    }
+    return value
+}
+
+// -----------------------------------------------------------------------------
+
 const fromJSON = JSON.parse
 
 function toJSON(value,replacer,space) {
@@ -326,7 +385,12 @@ function toJSON(value,replacer,space) {
             replacer = null
         }
     }
-    return JSON.stringify(value,replacer,space)
+    try {
+        return JSON.stringify(value,replacer,space)
+    } catch (e) {
+        value = removeCycles(value,new Set())
+        return JSON.stringify(value,replacer,space)
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -386,6 +450,7 @@ function difference(a, b) {
 // -----------------------------------------------------------------------------
 
 module.exports = Object.freeze({
+    caller,
     difference,
     flatten,
     fromJSON,

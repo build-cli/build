@@ -1,11 +1,11 @@
 'use strict';
-const include   = require('./include')
 const os        = require('os')
 const utilities = require('./utilities')
 
 // -----------------------------------------------------------------------------
 
 const {
+    caller,
     isObject,
     isDefined,
 } = utilities
@@ -26,9 +26,10 @@ class Platforms {
     }
 
     static set(platforms,name,definition) {
+        const filename = caller()
         const oldPlatform = platforms[name]
         if (isDefined(oldPlatform)) {
-            const newFilename = include.filename
+            const newFilename = filename
             const oldFilename = oldPlatform[$filename]
             console.error(
                 `cannot replace platforms.${name}\n`+
@@ -47,7 +48,7 @@ class Platforms {
             return false
         }
         definition.name = name
-        definition[$filename] = include.filename
+        definition[$filename] = filename
         Object.freeze(definition)
         platforms[name] = definition
         return true

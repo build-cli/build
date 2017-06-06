@@ -5,7 +5,6 @@
 #include <string.h> // strcmp, strcasecmp
 #include <stdlib.h>	// strtod, strtol
 
-
 namespace M4 {
 
 // Engine/String.cpp

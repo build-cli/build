@@ -1,11 +1,11 @@
 'use strict';
-const include   = require('./include')
 const os        = require('os')
 const utilities = require('./utilities')
 
 // -----------------------------------------------------------------------------
 
 const {
+    caller,
     isObject,
     isDefined,
 } = utilities
@@ -26,9 +26,10 @@ class Architectures {
     }
 
     static set(architectures,name,definition) {
+        const filename = caller()
         const oldArchitecture = architectures[name]
         if (isDefined(oldArchitecture)) {
-            const newFilename = include.filename
+            const newFilename = filename
             const oldFilename = oldArchitecture[$filename]
             error(
                 `cannot replace architectures.${name}\n`+
@@ -46,7 +47,7 @@ class Architectures {
             return false
         }
         definition.name = name
-        definition[$filename] = include.filename
+        definition[$filename] = filename
         Object.freeze(definition)
         architectures[name] = definition
         Object.defineProperty(global,name,{
@@ -60,7 +61,7 @@ class Architectures {
         if (isDefined(oldArchitecture)) {
             const oldFilename = oldArchitecture.filename
             console.error(
-                `cannot delete include.architectures.${name}\n`+
+                `cannot delete architectures.${name}\n`+
                 `    defined here: ${oldFilename}`
             )
             process.exit(1)

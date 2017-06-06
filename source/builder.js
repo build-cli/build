@@ -57,6 +57,7 @@ class Builder {
         const filename  = join(config.cachedir,'.buildlog')
         const sources   = {}
         const errors    = []
+        const diagnostics = []
         const rebuild   = options.rebuild
         const verbose   = options.verbose
 
@@ -93,7 +94,8 @@ class Builder {
             name||(name = command)
             const command      = production.command
             const dependencies = production.dependencies
-            return {name,output,command,dependencies}
+            const digest       = production.digest
+            return {name,output,command,dependencies,digest}
         }
 
         function parseProductions(output,productions,depth=0) {
@@ -255,19 +257,29 @@ class Builder {
             assert(isEmpty(errors))
             const command = task.command
             shell(command,(err,stdout,stderr)=>{
-                if (err) {
-                    errors.push(`${command}\n\n${stdout}${stderr}`)
-                    return onComplete(err)
+                const status = err ? err : { code:0, signal:null }
+                const digest = task.digest(status,stdout,stderr)
+                for (let dependenccy of digest.dependencies) {
+                    addSource(dependenccy,task.output)
                 }
-                if (errors.length) {
-                    return onComplete(err)
-                }
-                const parseDependencies = task.dependencies
-                if (isFunction(parseDependencies)) {
-                    const dependencies = parseDependencies(stdout,stderr)
-                    for (let dependency of dependencies) {
-                        addSource(dependency,task.output)
+                for (let diagnostic of digest.diagnostics) {
+                    if (!isObject(diagnostic)) {
+                        diagnostic = {
+                            status:error,
+                            message:toString(diagnostic),
+                        }
                     }
+                    diagnostic.command = command
+                    diagnostics.push(diagnostic)
+                    if (diagnostic.status === undefined) {
+                        diagnostic.status = 'error'
+                    }
+                    if (diagnostic.status === 'error') {
+                        errors.push(diagnostic)
+                    }
+                }
+                if (err) {
+                    return onComplete(err)
                 }
                 return onComplete(err)
             })
@@ -322,14 +334,15 @@ class Builder {
             })
         }
 
-        this.name     = config.name
-        this.batches  = batches
-        this.buildLog = buildLog
-        this.config   = config
-        this.sources  = sources
-        this.errors   = errors
-        this.target   = target
-        this.start    = startBuild
+        this.name        = config.name
+        this.batches     = batches
+        this.buildLog    = buildLog
+        this.config      = config
+        this.diagnostics = diagnostics
+        this.errors      = errors
+        this.sources     = sources
+        this.target      = target
+        this.start       = startBuild
         Object.freeze(this)
     }
 

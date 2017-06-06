@@ -5,10 +5,12 @@ const clang = require('./clang')
 
 // -----------------------------------------------------------------------------
 
-const {
-    escape,
-    join,
-} = path
+const exists   = fs.existsSync
+const read     = fs.readFileSync
+const unlink   = fs.unlinkSync
+const realpath = fs.realpathSync
+
+const { escape, join } = path
 
 // -----------------------------------------------------------------------------
 
@@ -30,21 +32,61 @@ function parseDependencies(dependencies) {
 }
 
 function parseDependencyFile(filename) {
-    return parseDependencies(fs.readFileSync(filename,'utf8'))
+    return parseDependencies(read(filename,'utf8'))
 }
 
 function consumeDependencyFile(filename) {
-    const dependencies = parseDependencyFile(filename)
-    fs.unlink(filename)
-    return dependencies
+    if (exists(filename)) {
+        const dependencies = parseDependencyFile(filename)
+        process.nextTick(unlink,filename)
+        return dependencies
+    }
+    return []
 }
 
 // -----------------------------------------------------------------------------
 
+const DIAGNOSTIC = /([^:]+):(\d+):(\d+): ((?:error)|(?:warning)): (.*)/
+
+function parseDiagnostics(stderr) {
+    const lines = stderr.split('\n')
+    if (lines.last && lines.last.match(/^\d+ errors generated$/)) {
+        lines.pop()
+    }
+    const diagnostics = []
+    for (let line of lines) {
+        const diagnostic = line.match(DIAGNOSTIC)
+        if (diagnostic) {
+            const file    = realpath(diagnostic[1])
+            const line    = parseInt(diagnostic[2])
+            const column  = parseInt(diagnostic[3])
+            const status  = diagnostic[4] // 'warning' or 'error'
+            const message = diagnostic[5]
+            diagnostics.push({file,line,column,status,message})
+        }
+    }
+    return diagnostics
+}
+
+// -----------------------------------------------------------------------------
+
+function digest(status,stdout,stderr,depfile) {
+    return {
+        dependencies:consumeDependencyFile(depfile),
+        diagnostics:parseDiagnostics(stderr),
+    }
+}
+
+// -----------------------------------------------------------------------------
+
+const CXXFLAGS = [
+    '-MMD',
+]
+
 function cxx(config,sources) {
-    const cxxflags = (config.cxxflags||[]).join(' ')
+    const cxxflags = CXXFLAGS.concat(config.cxxflags||[]).join(' ')
     const cxx = clang(config)
-    const compile = `${cxx} -MMD ${cxxflags}`
+    const compile = `${cxx} ${cxxflags}`
     const productions = {}
     for (let sourcePath in sources) {
         const srcfile = sourcePath
@@ -55,7 +97,9 @@ function cxx(config,sources) {
             name:`compile ${sourcePath}`,
             command:`${compile} -o ${escape(objfile)} -c ${escape(srcfile)}`,
             sources:{ [sourcePath]:sources[sourcePath] },
-            dependencies() { return parseDependencyFile(depfile) },
+            digest(status,stdout,stderr) {
+                return digest(status,stdout,stderr,depfile)
+            },
         }
     }
     return productions

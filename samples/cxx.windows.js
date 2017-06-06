@@ -5,30 +5,44 @@ const vcvars = require('./vcvars')
 
 // -----------------------------------------------------------------------------
 
-const {
-    join,
-    quote,
-} = path
+const realpath = fs.realpathSync
+
+const { join, quote } = path
 
 // -----------------------------------------------------------------------------
 
-function parseDependencies(stdout,systemIncludeDirs) {
+const DEPENDENCY = /Note: including file:\s+(.*)/
+const DIAGNOSTIC = /([^(]+)\((\d+)(?:,(\d+))?\): ((?:error)|(?:warning)) ([A-Z]\d{4}: .*)/
+
+function digest(status,stdout,stderr,systemIncludeDirs) {
     const lines = stdout.split(/[\r\n]+/)
     const dependencies = []
+    const diagnostics = []
     for (let line of lines) {
-        const match = line.match(/Note: including file:\s+(.*)/)
-        if (match) {
-            const dependency = match[1]
-            dependencies.push(dependency)
+        const dependency = line.match(DEPENDENCY)
+        if (dependency) {
+            const file = dependency[1]
+            dependencies.push(file)
             for (let dir of systemIncludeDirs) {
-                if (dependency.startsWith(dir)) {
+                if (file.startsWith(dir)) {
                     dependencies.pop()
                     break
                 }
             }
+            continue
+        }
+        const diagnostic = line.match(DIAGNOSTIC)
+        if (diagnostic) {
+            const file    = realpath(diagnostic[1])
+            const line    = parseInt(diagnostic[2])
+            const column  = parseInt(diagnostic[3]||'0')
+            const status  = diagnostic[4]
+            const message = diagnostic[5]
+            diagnostics.push({file,line,column,status,message})
+            continue
         }
     }
-    return dependencies
+    return { dependencies, diagnostics }
 }
 
 // -----------------------------------------------------------------------------
@@ -44,14 +58,11 @@ const CXXFLAGS = [
 
 function cxx(config,sources) {
     const {bin,include,lib} = vcvars(config)
-    const cxxflags = (config.cxxflags||[]).concat(CXXFLAGS).join(' ')
+    const cxxflags = CXXFLAGS.concat(config.cxxflags||[]).join(' ')
     const cxx      = join(bin,'cl')
     const iflags   = '/I'+include.map(quote).join(' /I')
     const compile  = `${quote(cxx)} ${cxxflags} ${iflags}`
     const productions = {}
-    function dependencies(stdout,stderr) {
-        return parseDependencies(stdout,include)
-    }
     for (let sourcePath in sources) {
         const srcfile = sourcePath
         const objpath = join(config.cachedir,'obj',srcfile)
@@ -60,7 +71,9 @@ function cxx(config,sources) {
             name:`compile ${sourcePath}`,
             command:`${compile} /Fo${quote(objfile)} /c ${quote(srcfile)}`,
             sources:{ [sourcePath]:sources[sourcePath] },
-            dependencies,
+            digest(status,stdout,stderr) {
+                return digest(status,stdout,stderr,include)
+            },
         }
     }
     return productions

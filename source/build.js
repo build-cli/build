@@ -1,10 +1,13 @@
 #!/usr/bin/env node --harmony_trailing_commas
 'use strict';
 require('use-strict')
-const fs     = require('./fs')
-const os     = require('os')
-const path   = require('./path')
-const version = '0.0.2'
+const fs       = require('./fs')
+const os       = require('os')
+const path     = require('./path')
+const version  = '0.0.2'
+const realpath = fs.realpathSync
+const relative = path.relative
+const startdir = process.cwd()
 
 // -----------------------------------------------------------------------------
 
@@ -34,7 +37,7 @@ commander
 .parse(process.argv)
 
 const configNames = commander.args
-const directory   = commander.directory
+const directory   = realpath(commander.directory||startdir)
 const file        = commander.file||'buildfile'
 const parallelism = commander.jobs||(os.cpus().length * 2)
 const rebuild     = commander.rebuild
@@ -96,7 +99,7 @@ const BuildTargets = require('./buildtargets')
 
 const architectures = require('./architectures')
 const architecture  = architectures.host
-const include       = require('./include')
+const includes      = require('./includes')
 const platforms     = require('./platforms')
 const platform      = platforms.host
 const sources       = require('./sources')
@@ -109,9 +112,9 @@ Object.defineProperties(global,{
     builddir:{get(){return builddir},enumerable:true},
     buildfile:{get(){return buildfile},enumerable:true},
     cachedir:{get(){return cachedir},enumerable:true},
-    include:{get(){return include},enumerable:true},
     platforms:{get(){return platforms},enumerable:true},
     platform:{get(){return platform},enumerable:true},
+    includes:{get(){return includes},enumerable:true},
     sources:{get(){return sources},enumerable:true},
     targets:{get(){return targets},enumerable:true},
     verbose:{get(){return verbose},enumerable:true},
@@ -119,7 +122,7 @@ Object.defineProperties(global,{
 
 // -----------------------------------------------------------------------------
 
-include(buildfile)
+require(buildfile)
 
 // -----------------------------------------------------------------------------
 
@@ -266,13 +269,43 @@ function startBuild() {
         print(`(${step}/${stepCount}) ${description}`)
     }
 
+    const rootdir = (startdir.length < directory.length) ? startdir : directory
+    const chalk   = require('chalk')
+    const red     = chalk.bold.red
+    const yellow  = chalk.bold.yellow
+
+    function printDiagnostic(diagnostic) {
+        const { file,line,column,status,message } = diagnostic
+        const parts = []
+        if (file) {
+            parts.push(`${relative(rootdir,file)}:`)
+            if (line) {
+                parts.push(`${line}:`)
+                if (column) {
+                    parts.push(`${column}:`)
+                }
+            }
+            parts.push(' ')
+        }
+        parts.push(`${status}: ${message}`)
+        const text = parts.join('')
+        switch (status) {
+            case 'error':   print(red(text));    return
+            case 'warning': print(yellow(text)); return
+            default:        print(text);         return
+        }
+    }
+
     function onBuildComplete(errors,builder) {
         builder.watchPaths.map(s=>watchPaths.add(s))
-        if (errors) {
-            const chalk = require('chalk')
-            const red = chalk.bold.red
+        const diagnostics = builder.diagnostics
+        if (diagnostics.length) {
             print('')
-            errors.map(err=>process.stderr.write(red(err)))
+            for (let diagnostic of builder.diagnostics) {
+                printDiagnostic(diagnostic)
+            }
+        }
+        if (errors) {
             if (!watch) {
                 exit(1)
             }

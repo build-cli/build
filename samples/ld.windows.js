@@ -5,12 +5,26 @@ const vcvars = require('./vcvars')
 
 // -----------------------------------------------------------------------------
 
-const {
-    join,
-    quote,
-} = path
+const { join,  quote } = path
 
 // -----------------------------------------------------------------------------
+
+function digest(status,stdout,stderr) {
+    if (status.code || status.signal) {
+        print({status,stdout,stderr})
+    }
+    return {
+        dependencies:[],
+        diagnostics:[],
+    }
+}
+
+// -----------------------------------------------------------------------------
+
+const LDFLAGS = [
+    '/nologo',
+    '/NODEFAULTLIB:User32.lib',
+]
 
 function ld(outname,config,sources) {
     const {bin,lib} = vcvars(config)
@@ -18,10 +32,10 @@ function ld(outname,config,sources) {
     const outpath = join(config.cachedir,'bin',outname+'.exe')
     const name = `link ${outname}`
     const ld = join(bin,'link')
-    const libpaths = '/LIBPATH:'+lib.map(quote).join(' /LIBPATH:')
-    const ldflags = (config.ldflags||[]).join(' ')
-    const command = `${quote(ld)} /nologo ${ldflags} ${libpaths} /OUT:${quote(outpath)} ${inpaths}`
-    return { [outpath]:{name,command,sources} }
+    const libpaths = lib.map(lib=>`/LIBPATH:${quote(lib)}`).join(' ')
+    const ldflags = LDFLAGS.concat(libpaths,config.ldflags||[]).join(' ')
+    const command = `${quote(ld)} ${ldflags} /OUT:${quote(outpath)} ${inpaths}`
+    return { [outpath]:{name,command,sources,digest} }
 }
 
 // -----------------------------------------------------------------------------

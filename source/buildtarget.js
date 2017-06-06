@@ -1,9 +1,11 @@
 'use strict';
 const BuildConfig = require('./buildconfig')
-const include     = require('./include')
+const path        = require('./path')
 const utilities   = require('./utilities')
 
 // -----------------------------------------------------------------------------
+
+const { dirname } = path
 
 const {
     isEmpty,
@@ -18,10 +20,10 @@ const NONE = Object.freeze({})
 // -----------------------------------------------------------------------------
 
 class BuildTarget {
-    constructor(name,definition) {
+    constructor(name,filename,definition) {
         this.name      = name
-        this.dirname   = include.dirname
-        this.filename  = include.filename
+        this.dirname   = dirname(filename)
+        this.filename  = filename
         this.aliases   = definition.aliases||NONE
         this.config    = definition.config||NONE
         this.products  = definition.products||NONE
