@@ -2,7 +2,7 @@
     "files.associations": {
         "buildfile":"javascript",
         "*.build":"javascript",
-        ".buildgraph":"json",
+        ".buildlog":"json",
         "*.d":"makefile"
     }
 }

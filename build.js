@@ -1,4 +1,4 @@
-#!/usr/bin/env node --harmony_trailing_commas
+#!/usr/bin/env node --use-strict --harmony_trailing_commas
 'use strict';
 require('use-strict')
 const fs       = require('./fs')
