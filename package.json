@@ -1,19 +1,27 @@
 {
-    "name":"build",
-    "version":"0.0.1",
-    "description":"A scriptable build system.",
-    "author":"Garett Bass <garettbass@me.com>",
-    "contributors":[],
-    "repository":{"type":"git","url":"https://github.com/build-cli/build.git"},
-    "license":"Unlicense",
-    "main":"build.js",
-    "bin":"build.js",
-    "dependencies":{
-        "chalk":"^1.1.3",
-        "commander":"^2.9.0",
-        "glob":"^7.1.1",
-        "use-strict":"^1.0.1"
-    },
-    "engines":{"node":"8.0.0","npm":"4.2.0"},
-    "os":["darwin","win32"]
+  "name": "build",
+  "version": "0.0.1",
+  "description": "A scriptable build system.",
+  "author": "Garett Bass <garettbass@me.com>",
+  "contributors": [],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/build-cli/build.git"
+  },
+  "license": "Unlicense",
+  "main": "main.js",
+  "bin": "main.js",
+  "dependencies": {
+    "chalk": "^1.1.3",
+    "commander": "^2.9.0",
+    "glob": "^7.1.1"
+  },
+  "engines": {
+    "node": "8.0.0",
+    "npm": "4.2.0"
+  },
+  "os": [
+    "darwin",
+    "win32"
+  ]
 }

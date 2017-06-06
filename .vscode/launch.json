@@ -12,7 +12,7 @@
                 "--use_strict",
                 "--harmony_trailing_commas"
             ],
-            "program": "${workspaceRoot}/source/build.js",
+            "program": "${workspaceRoot}/main.js",
             "args": [
                 "-v",
                 "-C","samples",

@@ -47,7 +47,26 @@ function digest(status,stdout,stderr,systemIncludeDirs) {
 
 // -----------------------------------------------------------------------------
 
-const CXXFLAGS = [
+const CLFLAGMAP = {
+    ['-g']:'/DEBUG /Z7',
+    ['-O2']:'/O2',
+}
+
+function clflags(config) {
+    const flags = config.cxxflags||[]
+    const length = flags.length
+    for (let i = 0; i < length; ++i) {
+        let flag = CLFLAGMAP[flags[i]]
+        if (flag) {
+            flags[i] = flag
+        }
+    }
+    return flags
+}
+
+// -----------------------------------------------------------------------------
+
+const CLFLAGS = [
     '/nologo',
     '/showIncludes',
     '/EHsc',       // standard C++ exception handling
@@ -58,18 +77,19 @@ const CXXFLAGS = [
 
 function cxx(config,sources) {
     const {bin,include,lib} = vcvars(config)
-    const cxxflags = CXXFLAGS.concat(config.cxxflags||[]).join(' ')
-    const cxx      = join(bin,'cl')
-    const iflags   = '/I'+include.map(quote).join(' /I')
-    const compile  = `${quote(cxx)} ${cxxflags} ${iflags}`
+    const iflags      = include.map(x=>`/I${quote(x)}`).join(' ')
+    const cxxflags    = CLFLAGS.concat(clflags(config),iflags).join(' ')
+    const cxx         = join(bin,'cl')
+    const compile     = `${quote(cxx)} ${cxxflags} ${iflags}`
     const productions = {}
     for (let sourcePath in sources) {
         const srcfile = sourcePath
         const objpath = join(config.cachedir,'obj',srcfile)
         const objfile = `${objpath}.o`
+        const name    = `compile ${sourcePath}`
+        const command = `${compile} /Fo${quote(objfile)} /c ${quote(srcfile)}`
         productions[objfile] = {
-            name:`compile ${sourcePath}`,
-            command:`${compile} /Fo${quote(objfile)} /c ${quote(srcfile)}`,
+            name, command,
             sources:{ [sourcePath]:sources[sourcePath] },
             digest(status,stdout,stderr) {
                 return digest(status,stdout,stderr,include)

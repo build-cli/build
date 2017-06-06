@@ -115,4 +115,5 @@ cxx.sources = function cxx_sources(/*optional*/dir) {
 
 // -----------------------------------------------------------------------------
 
+module.architectures = 
 module.exports = Object.freeze(cxx)

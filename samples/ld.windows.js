@@ -28,13 +28,13 @@ const LDFLAGS = [
 
 function ld(outname,config,sources) {
     const {bin,lib} = vcvars(config)
-    const inpaths = Object.keys(sources).map(quote).join(' ')
-    const outpath = join(config.cachedir,'bin',outname+'.exe')
-    const name = `link ${outname}`
-    const ld = join(bin,'link')
-    const libpaths = lib.map(lib=>`/LIBPATH:${quote(lib)}`).join(' ')
-    const ldflags = LDFLAGS.concat(libpaths,config.ldflags||[]).join(' ')
-    const command = `${quote(ld)} ${ldflags} /OUT:${quote(outpath)} ${inpaths}`
+    const name     = `link ${outname}`
+    const ld       = join(bin,'link')
+    const libflags = lib.map(x=>`/LIBPATH:${quote(x)}`).join(' ')
+    const ldflags  = LDFLAGS.concat(config.ldflags||[],libflags).join(' ')
+    const outpath  = join(config.cachedir,'bin',outname+'.exe')
+    const inpaths  = Object.keys(sources).map(quote).join(' ')
+    const command  = `${quote(ld)} ${ldflags} /OUT:${quote(outpath)} ${inpaths}`
     return { [outpath]:{name,command,sources,digest} }
 }
 

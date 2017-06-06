@@ -1,6 +1,5 @@
 #!/usr/bin/env node --use-strict --harmony_trailing_commas
 'use strict';
-require('use-strict')
 const fs       = require('./fs')
 const os       = require('os')
 const path     = require('./path')
@@ -269,7 +268,7 @@ function startBuild() {
         print(`(${step}/${stepCount}) ${description}`)
     }
 
-    const rootdir = (startdir.length < directory.length) ? startdir : directory
+    const rootdir = (startdir.length < directory.length) ?startdir :directory
     const chalk   = require('chalk')
     const red     = chalk.bold.red
     const yellow  = chalk.bold.yellow
